@@ -13,35 +13,67 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Language {
+  PYTHON
+  C
+  CPP
+  JAVA
+  JAVASCRIPT
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  name      String?
-  createdAt DateTime  @default(now())
-  problems  Problem[]
-  contests  Contest[]
-
-  Submission Submission[]
-
+  id                 Int                  @id @default(autoincrement())
+  email              String               @unique
+  password           String
+  name               String?
+  createdAt          DateTime             @default(now())
+  problems           Problem[]
+  contests           Contest[]
+  Submission         Submission[]
   ContestParticipant ContestParticipant[]
+
+  Problem_code Problem_code[]
 }
 
 model Problem {
-  id          Int          @id @default(autoincrement())
-  title       String
-  description String
-  difficulty  String
-  creator     User         @relation(fields: [creatorId], references: [id])
-  creatorId   Int
-  submissions Submission[]
-
+  id             Int              @id @default(autoincrement())
+  title          String
+  description    String
+  difficulty     Difficulty
+  creator        User             @relation(fields: [creatorId], references: [id])
+  creatorId      Int
+  submissions    Submission[]
+  tags           String[]
   ContestProblem ContestProblem[]
+
+  Problem_code Problem_code[]
+}
+
+model Problem_code {
+  id        Int      @unique @default(autoincrement())
+  function  String
+  language  Language
+  testcases String
+  checker   String
+  problem   Problem  @relation(fields: [problemId], references: [id])
+  problemId Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime @default(now())
+
+  @@id([problemId, language])
 }
 
 model Submission {
   id        Int      @id @default(autoincrement())
   code      String
-  language  String
+  language  Language
   status    String
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
