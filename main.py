@@ -133,7 +133,7 @@ async def login_user(user: UserLogin, response: Response):
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True)
-    return {"message": "Logged in successfully"}
+    return {"message": "Logged in successfully","user": user_data}
 
 @app.get("/users/profile")
 async def get_user_profile(current_user=Depends(get_current_user)):

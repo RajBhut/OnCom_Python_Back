@@ -1,9 +1,9 @@
-from typing import List
+from typing import Any, Dict, List, Optional
 from db import prisma
 from pydantic import BaseModel, EmailStr
 from util import create_access_token,get_current_user,get_password_hash
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 import base64
 import urllib.parse
 
@@ -33,7 +33,10 @@ class Code(BaseModel):
     userId:int
     creatorId:int
 
-
+class Notes_data(BaseModel):
+    edge:str
+    node:str
+    
 
 @router.post("/")
 async def create_question(problem: Problem, current_user=Depends(get_current_user)):
@@ -81,6 +84,67 @@ async def get_single(id:int):
         print(e)
         raise HTTPException(status_code=500,detail="error in fetching problem")
     
+    
+@router.post("/update/{id}")
+async def add_notes(id:int,Data:Notes_data):
+    
+ 
+    try:
+        data = await prisma.problem.update(
+            where={"id":id},
+            data={
+                "edgedata":Data.edge,
+                "nodedata":Data.node
+            }
+        )
+        return data
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500,detail="error in updating problem")
+    
+
+
+@router.get("/update/{id}")
+async def get_update(id:int):
+    try:
+        data = await prisma.problem.find_first(where={
+            "id":id
+        },
+        )
+        
+        return data
+        
+        
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=403 ,detail="Error in fatching notes")
+
+  
+@router.get("/data/{id}")
+async def get_single(id:int):
+    
+    data = {}
+    try:
+       
+        data = await prisma.problem.find_many(where={"id":id})
+        
+        if data ==None:
+            
+            
+            return {}
+        else:
+            
+            return data
+        
+        
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500,detail="error in fetching problem")
+    
+
+
+
 
 @router.post("/add")
 async def add_code(data: Code, current_user=Depends(get_current_user)):

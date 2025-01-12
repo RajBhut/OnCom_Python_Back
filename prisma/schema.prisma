@@ -51,7 +51,9 @@ model Problem {
   submissions    Submission[]
   tags           String[]
   ContestProblem ContestProblem[]
+  edgedata       String           @default("")
 
+  nodedata     String         @default("")
   Problem_code Problem_code[]
 }
 
