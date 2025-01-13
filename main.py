@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from jose import JWTError, jwt
+
 from passlib.context import CryptContext
 from db import prisma
 from datetime import datetime, timedelta
@@ -54,9 +54,9 @@ async def startup():
 async def shutdown():
     await prisma.disconnect()
 
-@app.get("/test/{name}")
+@app.get("/")
 def test(name: str):
-    return {"message": f"Hello, {name}"}
+    return {"message": f"Hello World"}
 
 
 
