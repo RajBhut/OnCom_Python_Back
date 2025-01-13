@@ -27,7 +27,8 @@ app.add_middleware(
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.getenv("JWT_SECRET", "your_secret_key")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 80
+ACCESS_TOKEN_EXPIRE_DAYS = 14  
+COOKIE_MAX_AGE = 60 * 60 * 24 * ACCESS_TOKEN_EXPIRE_DAYS 
 
 
 class UserLogin(BaseModel):
@@ -57,6 +58,8 @@ async def shutdown():
 def test(name: str):
     return {"message": f"Hello, {name}"}
 
+
+
 @app.post("/users/register")
 async def register_user(user: UserRegister, response: Response):
     hashed_password = get_password_hash(user.password)
@@ -77,9 +80,18 @@ async def register_user(user: UserRegister, response: Response):
         
         access_token = create_access_token(
             data={"sub": str(new_user.id)},
-            expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_MINUTES)
+            expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
         )
-        response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True)
+        
+   
+        response.set_cookie(
+            key="jwt",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            max_age=COOKIE_MAX_AGE,
+            samesite='lax' 
+        )
         
         return {
             "message": "User registered successfully",
@@ -96,20 +108,8 @@ async def register_user(user: UserRegister, response: Response):
             status_code=500,
             detail="Error registering user"
         )
-    
 
-# @app.post("/problem")
-# async def create_question(problem: Problem, current_user=Depends(get_current_user)):
-#     new_problem = await prisma.problem.create(
-#         data={
-#             "title": problem.title,
-#             "description": problem.description,
-#             "difficulty": problem.difficulty,
-#             "tags": problem.tags,
-#             "creatorId": current_user.id
-#         }
-#     )
-#     return {"message": "Problem created successfully", "problem": new_problem}
+
 
 @app.post("/users/login")
 async def login_user(user: UserLogin, response: Response):
@@ -128,12 +128,25 @@ async def login_user(user: UserLogin, response: Response):
             status_code=400,
             detail="Invalid email or password"
         )
+    
     access_token = create_access_token(
         data={"sub": str(user_data.id)},
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS) 
     )
-    response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True)
-    return {"message": "Logged in successfully","user": user_data}
+    
+    
+    response.set_cookie(
+        key="jwt",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        max_age=COOKIE_MAX_AGE,
+        samesite='lax' 
+    )
+    
+    return {"message": "Logged in successfully", "user": user_data}
+
+
 
 @app.get("/users/profile")
 async def get_user_profile(current_user=Depends(get_current_user)):
