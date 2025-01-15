@@ -2,13 +2,13 @@ from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from passlib.context import CryptContext
-from db import prisma
+from api.db import prisma
 from datetime import datetime, timedelta
 from typing import Optional, List
 import os
 from pydantic import BaseModel, EmailStr
-from util import create_access_token,get_current_user,get_password_hash
-from routers import problem_route
+from api.util import create_access_token,get_current_user,get_password_hash
+from api import problem_route
 app = FastAPI()
 
 app.include_router(problem_route.router ,prefix="/problem")

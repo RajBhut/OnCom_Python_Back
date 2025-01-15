@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional
 import os
-from db import prisma
+from api.db import prisma
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

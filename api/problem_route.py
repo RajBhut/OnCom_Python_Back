@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
-from db import prisma
+from api.db import prisma
 from pydantic import BaseModel, EmailStr
-from util import create_access_token,get_current_user,get_password_hash
+from api.util import create_access_token,get_current_user,get_password_hash
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 import base64
