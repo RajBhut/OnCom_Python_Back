@@ -1,5 +1,6 @@
 fastapi
 jose
+uvicorn
 passlib
 pydantic
 python-dotenv
