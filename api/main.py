@@ -8,10 +8,10 @@ from typing import Optional, List
 import os
 from pydantic import BaseModel, EmailStr
 from api.util import create_access_token,get_current_user,get_password_hash
-from routers import problem_route
+from api import problem_route as pr
 app = FastAPI()
 
-app.include_router(problem_route.router ,prefix="/problem")
+app.include_router(pr.router ,prefix="/problem")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:5173"],
