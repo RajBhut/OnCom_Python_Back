@@ -30,7 +30,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 14  
 COOKIE_MAX_AGE = 60 * 60 * 24 * ACCESS_TOKEN_EXPIRE_DAYS 
 
-## just for 
+## just     
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
