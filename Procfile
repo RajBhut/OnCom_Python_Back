@@ -1,2 +1,2 @@
-release: pip install prisma && prisma generate
+release: ""
 web: cd "$PWD" && prisma generate && uvicorn api.main:app --host=0.0.0.0 --port=${PORT:-8000}
