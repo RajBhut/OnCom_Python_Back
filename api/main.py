@@ -96,7 +96,7 @@ async def login(user: UserLogin, response: Response):
     result = supabase.table("User").select("*").eq("email", user.email).execute()
     db_user = result.data[0] if result.data else None
     
-    if not db_user:
+    if not db_user: 
         raise HTTPException(status_code=400, detail="Invalid email or password")
     
     if not pwd_context.verify(user.password, db_user["password"]):
@@ -107,7 +107,7 @@ async def login(user: UserLogin, response: Response):
         data={"sub": str(db_user["id"])}, expires_delta=access_token_expires
     )
     response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True)
-    
+    print("dbuser"+db_user)
     return {"message": "Logged in successfully", "user": {"id": db_user["id"], "email": db_user["email"], "name": db_user["name"]}}
 
 
