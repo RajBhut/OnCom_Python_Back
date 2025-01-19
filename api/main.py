@@ -175,6 +175,7 @@ async def login(user: UserLogin, response: Response):
         value=access_token,
         httponly=True,
         secure=True,
+        samesite="None",
         max_age=COOKIE_MAX_AGE,
         expires=COOKIE_MAX_AGE
     )
