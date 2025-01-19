@@ -17,7 +17,7 @@ app = FastAPI()
 app.include_router(pr.router, prefix="/problem")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173","https://oncomp.rajb.codes","https://on-comp-frontend.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
