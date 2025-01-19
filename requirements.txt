@@ -5,3 +5,4 @@ passlib
 pydantic
 python-dotenv
 prisma
+supabase     
