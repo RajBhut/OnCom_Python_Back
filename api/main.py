@@ -1,13 +1,13 @@
 
 
-from fastapi import FastAPI, Depends, HTTPException, Request, Response
+from fastapi import FastAPI, Depends, HTTPException,  Response
 from fastapi.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
-from typing import Optional, List
+from datetime import  timedelta
+from typing import  List
 import os
 from pydantic import BaseModel, EmailStr
-from supabase import create_client, Client
+
 from api.util import create_access_token, get_current_user, get_password_hash
 from api.routers import problem_route as pr
 
@@ -83,8 +83,7 @@ async def register_user(user: UserRegister, response: Response):
         access_token = create_access_token(
             data={"sub": str(db_user["id"])}, expires_delta=access_token_expires
         )
-        response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True, max_age=7*24*60*60, 
-        expires=7*24*60*60)
+        response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True)
         
         return {"message": "User registered successfully", "user": {"id": db_user["id"], "email": db_user["email"], "name": db_user["name"]}}
     except Exception as e:
@@ -107,8 +106,7 @@ async def login(user: UserLogin, response: Response):
     access_token = create_access_token(
         data={"sub": str(db_user["id"])}, expires_delta=access_token_expires
     )
-    response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True, max_age=7*24*60*60, 
-        expires=7*24*60*60)
+    response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True)
     
     return {"message": "Logged in successfully", "user": {"id": db_user["id"], "email": db_user["email"], "name": db_user["name"]}}
 
