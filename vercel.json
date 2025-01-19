@@ -3,11 +3,7 @@
   "builds": [
     {
       "src": "api/main.py",
-      "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.9",
-        "buildCommand": "pip install -r requirements.txt"
-      }
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -15,9 +11,5 @@
       "src": "/(.*)",
       "dest": "api/main.py"
     }
-  ],
-  "env": {
-    "PYTHONPATH": ".",
-    "JWT_SECRET": "@jwt_secret"
-  }
+  ]
 }
