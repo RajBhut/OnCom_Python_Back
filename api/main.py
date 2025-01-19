@@ -1,17 +1,20 @@
+
+
 from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-
 from passlib.context import CryptContext
-from api.db import prisma
 from datetime import datetime, timedelta
 from typing import Optional, List
 import os
 from pydantic import BaseModel, EmailStr
-from api.util import create_access_token,get_current_user,get_password_hash
-from api import problem_route as pr
+from supabase import create_client, Client
+from api.util import create_access_token, get_current_user, get_password_hash
+from api.routers import problem_route as pr
+
+from .db import supabase 
 app = FastAPI()
 
-app.include_router(pr.router ,prefix="/problem")
+app.include_router(pr.router, prefix="/problem")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:5173"],
@@ -22,23 +25,25 @@ app.add_middleware(
     max_age=3600,
 )
 
-
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.getenv("JWT_SECRET", "your_secret_key")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = 14  
-COOKIE_MAX_AGE = 60 * 60 * 24 * ACCESS_TOKEN_EXPIRE_DAYS 
+ACCESS_TOKEN_EXPIRE_DAYS = 14
+COOKIE_MAX_AGE = 60 * 60 * 24 * ACCESS_TOKEN_EXPIRE_DAYS
 
-## just     
+
+
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
 
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
     name: str
+
 
 class Problem(BaseModel):
     title: str
@@ -46,16 +51,9 @@ class Problem(BaseModel):
     difficulty: str
     tags: List[str]
 
-@app.on_event("startup")
-async def startup():
-    await prisma.connect()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await prisma.disconnect()
 
 @app.get("/")
-def test(name: str):
+def test():
     return {"message": f"Hello World"}
 
 
@@ -64,97 +62,63 @@ def test(name: str):
 async def register_user(user: UserRegister, response: Response):
     hashed_password = get_password_hash(user.password)
     try:
-        new_user = await prisma.user.create(
-            data={
-                "email": user.email,
-                "password": hashed_password,
-                "name": user.name,
-            }
-        )
+        result = supabase.table("User").select("*").eq("email", user.email).execute()
+     
+        if result.data:
+            raise HTTPException(status_code=400, detail="Email already registered")
         
-        user_data = {
-            "id": new_user.id,
-            "email": new_user.email,
-            "name": new_user.name
-        }
         
+        result = supabase.table("User").insert({
+            "email": user.email,
+            "password": hashed_password,
+            "name": user.name,
+        }).execute()
+       
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Error creating user")
+        
+        db_user = result.data[0]
+        
+        access_token_expires = timedelta(days=7)
         access_token = create_access_token(
-            data={"sub": str(new_user.id)},
-            expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+            data={"sub": str(db_user["id"])}, expires_delta=access_token_expires
         )
+        response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True, max_age=7*24*60*60, 
+        expires=7*24*60*60)
         
-   
-        response.set_cookie(
-            key="jwt",
-            value=access_token,
-            httponly=True,
-            secure=True,
-            max_age=COOKIE_MAX_AGE,
-            samesite='lax' 
-        )
-        
-        return {
-            "message": "User registered successfully",
-            "user": user_data
-        }
+        return {"message": "User registered successfully", "user": {"id": db_user["id"], "email": db_user["email"], "name": db_user["name"]}}
     except Exception as e:
-        if "Unique constraint" in str(e):
-            raise HTTPException(
-                status_code=400,
-                detail="Email already exists"
-            )
-        print(f"Registration error: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Error registering user"
-        )
-
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail="Error in registering user")
 
 
 @app.post("/users/login")
-async def login_user(user: UserLogin, response: Response):
-    user_data = await prisma.user.find_first(
-        where={
-            "email": user.email
-        }
-    )
-    if not user_data:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid email or password"
-        )
-    if not pwd_context.verify(user.password, user_data.password):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid email or password"
-        )
+async def login(user: UserLogin, response: Response):
+    result = supabase.table("User").select("*").eq("email", user.email).execute()
+    db_user = result.data[0] if result.data else None
+    print(result.data)
+    if not db_user:
+        raise HTTPException(status_code=400, detail="Invalid email or password")
     
+    if not pwd_context.verify(user.password, db_user["password"]):
+        raise HTTPException(status_code=400, detail="Invalid email or password")
+    
+    access_token_expires = timedelta(days=COOKIE_MAX_AGE)
     access_token = create_access_token(
-        data={"sub": str(user_data.id)},
-        expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS) 
+        data={"sub": str(db_user["id"])}, expires_delta=access_token_expires
     )
+    response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True, max_age=7*24*60*60, 
+        expires=7*24*60*60)
     
-    
-    response.set_cookie(
-        key="jwt",
-        value=access_token,
-        httponly=True,
-        secure=True,
-        max_age=COOKIE_MAX_AGE,
-        samesite='lax' 
-    )
-    
-    return {"message": "Logged in successfully", "user": user_data}
-
+    return {"message": "Logged in successfully", "user": {"id": db_user["id"], "email": db_user["email"], "name": db_user["name"]}}
 
 
 @app.get("/users/profile")
 async def get_user_profile(current_user=Depends(get_current_user)):
     return current_user
 
+
 @app.post("/users/logout")
 async def logout_user(response: Response):
     response.delete_cookie("jwt")
     return {"message": "Logged out successfully"}
-
-
