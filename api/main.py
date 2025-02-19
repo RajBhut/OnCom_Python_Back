@@ -57,48 +57,15 @@ def test():
 
 
 
-# @app.post("/users/register")
-# async def register_user(user: UserRegister, response: Response):
-#     hashed_password = get_password_hash(user.password)
-#     try:
-#         result = supabase.table("User").select("*").eq("email", user.email).execute()
-     
-#         if result.data:
-#             raise HTTPException(status_code=400, detail="Email already registered")
-        
-        
-#         result = supabase.table("User").insert({
-#             "email": user.email,
-#             "password": hashed_password,
-#             "name": user.name,
-#         }).execute()
-       
-#         if not result.data:
-#             raise HTTPException(status_code=500, detail="Error creating user")
-        
-#         db_user = result.data[0]
-        
-#         access_token_expires = timedelta(days=7)
-#         access_token = create_access_token(
-#             data={"sub": str(db_user["id"])}, expires_delta=access_token_expires
-#         )
-#         response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True)
-        
-#         return {"message": "User registered successfully", "user": {"id": db_user["id"], "email": db_user["email"], "name": db_user["name"]}}
-#     except Exception as e:
-#         print(f"Error: {e}")
-#         raise HTTPException(status_code=500, detail="Error in registering user")
 
 @app.post("/users/register")
 async def register_user(user: UserRegister, response: Response):
     hashed_password = get_password_hash(user.password)
     try:
-        # Check if the user already exists
         result = supabase.table("User").select("*").eq("email", user.email).execute()
         if result.data:
             raise HTTPException(status_code=400, detail="Email already registered")
         
-        # Create the user in the database
         result = supabase.table("User").insert({
             "email": user.email,
             "password": hashed_password,
@@ -110,7 +77,6 @@ async def register_user(user: UserRegister, response: Response):
         
         db_user = result.data[0]
         
-        # Create access token
         access_token_expires = timedelta(seconds=COOKIE_MAX_AGE)
         access_token = create_access_token(
             data={"sub": str(db_user["id"])}, expires_delta=access_token_expires
@@ -129,25 +95,6 @@ async def register_user(user: UserRegister, response: Response):
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail="Error in registering user")
 
-
-# @app.post("/users/login")
-# async def login(user: UserLogin, response: Response):
-#     result = supabase.table("User").select("*").eq("email", user.email).execute()
-#     db_user = result.data[0] if result.data else None
-    
-#     if not db_user: 
-#         raise HTTPException(status_code=400, detail="Invalid email or password")
-    
-#     if not pwd_context.verify(user.password, db_user["password"]):
-#         raise HTTPException(status_code=400, detail="Invalid email or password")
-    
-#     access_token_expires = timedelta(days=COOKIE_MAX_AGE)
-#     access_token = create_access_token(
-#         data={"sub": str(db_user["id"])}, expires_delta=access_token_expires
-#     )
-#     response.set_cookie(key="jwt", value=access_token, httponly=True, secure=True)
-#     print("dbuser"+db_user)
-#     return {"message": "Logged in successfully", "user": {"id": db_user["id"], "email": db_user["email"], "name": db_user["name"]}}
 
 @app.post("/users/login")
 async def login(user: UserLogin, response: Response):

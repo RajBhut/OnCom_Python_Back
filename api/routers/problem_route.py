@@ -112,6 +112,49 @@ async def get_problem_by_id(id: int):
         print(f"Error fetching problem by ID: {e}")
         raise HTTPException(status_code=500, detail="Error fetching problem by ID")
 
+@router.post("/solved/{id}")
+async def mark_problem_solved(id: int, current_user=Depends(get_current_user)):
+    try:
+        check_entry = supabase.table("Solved").select("*").eq("probid", id).eq("userid", current_user["id"]).execute()
+        
+        if len(check_entry.data)>0:
+            return {"message": "Problem already marked as solved"}
+        
+        
+       
+        updated_problem = supabase.table("Solved").insert({
+        "probid": id,
+        "userid": current_user["id"]
+        
+        }).execute()
+        
+        if not updated_problem:
+            raise HTTPException(status_code=400, detail="Failed to mark problem as solved")
+
+        return updated_problem.data[0]
+    except Exception as e:
+        print(f"Error marking problem as solved: {e}")
+        raise HTTPException(status_code=500, detail="Error marking problem as solved")
+    
+@router.get("/solved")
+async def get_solved_problems(current_user=Depends(get_current_user)):
+    try:
+        solved = supabase.table("Solved").select("probid").eq("userid", current_user["id"]).execute()
+        
+        if not solved.data:
+            return []
+        
+        problem_ids = [item["probid"] for item in solved.data]
+        
+        problems = supabase.table("Problem").select("*").in_("id", problem_ids).execute()
+        
+        return problems.data or []
+        
+    except Exception as e:
+        print(f"Error fetching solved problems: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching solved problems")
+    
+    
 @router.post("/add")
 async def add_code(data: Code, current_user=Depends(get_current_user)):
     if data.creatorId != data.userId:
@@ -149,3 +192,5 @@ async def delete_problem(id: int):
     except Exception as e:
         print(f"Error deleting problem: {e}")
         raise HTTPException(status_code=500, detail="Error deleting problem")
+
+

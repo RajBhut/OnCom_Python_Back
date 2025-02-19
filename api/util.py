@@ -32,8 +32,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 async def get_current_user(request: Request):
-    """Retrieve the currently authenticated user."""
+    
     token = request.cookies.get("jwt")
+    
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
 

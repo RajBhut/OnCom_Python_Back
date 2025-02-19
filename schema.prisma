@@ -30,14 +30,15 @@ enum Difficulty {
 }
 
 model User {
-  id                 Int                  @id @default(autoincrement())
-  email              String               @unique
-  password           String
-  name               String?
-  createdAt          DateTime             @default(now())
-  problems           Problem[]
-  contests           Contest[]
-  Submission         Submission[]
+  id         Int          @id @default(autoincrement())
+  email      String       @unique
+  password   String
+  name       String?
+  createdAt  DateTime     @default(now())
+  problems   Problem[]
+  contests   Contest[]
+  Submission Submission[]
+
   ContestParticipant ContestParticipant[]
 
   Problem_code Problem_code[]
