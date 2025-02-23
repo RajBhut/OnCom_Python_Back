@@ -99,10 +99,10 @@ async def register_user(user: UserRegister, response: Response):
 @app.post("/users/login")
 async def login(user: UserLogin, response: Response):
     try:
-            
+        
         result = supabase.table("User").select("*").eq("email", user.email).execute()
     except Exception as e:
-        print(e)
+        print( e)
         raise HTTPException(status_code=400, detail="Invalid email or password")
         
     db_user = result.data[0] if result.data else None

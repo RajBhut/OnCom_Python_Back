@@ -30,7 +30,9 @@ class Code(BaseModel):
     problemId: int
     userId: int
     creatorId: int
-
+class Submision(BaseModel):
+    lan:str
+    code:str
 class NotesData(BaseModel):
     edge: str
     node: str
@@ -85,14 +87,18 @@ async def get_problem_codes(id: int):
         raise HTTPException(status_code=500, detail="Error fetching problem codes")
 
 @router.post("/update/{id}")
-async def update_problem_notes(id: int, data: NotesData):
+async def update_problem_notes(id: int, data: NotesData, current_user=Depends(get_current_user)):
     try:
-        
-        
-        updated_problem = supabase.table("Problem").update({
-            "edgedata": data.edge,
-            "nodedata": data.node
-        }).eq("id", id).execute()
+        print(data)
+        updated_problem = supabase.table("notes").upsert(
+            {
+                "problem_id": id,
+                "user_id": current_user["id"],
+                "edgedata": data.edge,
+                "nodedata": data.node
+            },
+            on_conflict="user_id,problem_id"        ).execute()
+       
 
         if not updated_problem.data:
             raise HTTPException(status_code=400, detail="Failed to update problem")
@@ -103,7 +109,17 @@ async def update_problem_notes(id: int, data: NotesData):
         raise HTTPException(status_code=500, detail="Error updating problem notes")
 
 @router.get("/update/{id}")
-async def get_problem_by_id(id: int):
+async def get_problem_by_id(id: int, current_user=Depends(get_current_user)):
+    try:
+        problem = supabase.table("notes").select("*").eq("problem_id", id).eq("user_id",current_user["id"]).execute()
+     
+        return problem.data[0] if problem.data else {}
+    except Exception as e:
+        print(f"Error fetching problem by ID: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching problem by ID")
+
+@router.get("/des/{id}")
+async def get_des_by_id(id: int):
     try:
         problem = supabase.table("Problem").select("*").eq("id", id).execute()
      
@@ -112,21 +128,18 @@ async def get_problem_by_id(id: int):
         print(f"Error fetching problem by ID: {e}")
         raise HTTPException(status_code=500, detail="Error fetching problem by ID")
 
+
+
 @router.post("/solved/{id}")
-async def mark_problem_solved(id: int, current_user=Depends(get_current_user)):
+async def mark_problem_solved(id: int, Sub:Submision, current_user=Depends(get_current_user)):
+    
     try:
-        check_entry = supabase.table("Solved").select("*").eq("probid", id).eq("userid", current_user["id"]).execute()
-        
-        if len(check_entry.data)>0:
-            return {"message": "Problem already marked as solved"}
-        
-        
+        updated_problem = supabase.table("Solved").upsert({
+    "probid": id,
+    "userid": current_user["id"],  
+    "code": Sub.code,  
+    "lan": Sub.lan  }).execute() 
        
-        updated_problem = supabase.table("Solved").insert({
-        "probid": id,
-        "userid": current_user["id"]
-        
-        }).execute()
         
         if not updated_problem:
             raise HTTPException(status_code=400, detail="Failed to mark problem as solved")
@@ -153,7 +166,19 @@ async def get_solved_problems(current_user=Depends(get_current_user)):
     except Exception as e:
         print(f"Error fetching solved problems: {e}")
         raise HTTPException(status_code=500, detail="Error fetching solved problems")
-    
+@router.get("/solved/{id}")
+async def check_solved_problem(id: int, current_user=Depends(get_current_user)):
+    try:
+        solved = supabase.table("Solved").select("*").eq("userid", current_user["id"]).eq("probid", id).execute()
+        
+        if not solved.data:
+            return []
+        return solved.data
+        
+        
+    except Exception as e:
+        print(f"Error checking solved problem: {e}")
+        raise HTTPException(status_code=500, detail="Error checking solved problem")   
     
 @router.post("/add")
 async def add_code(data: Code, current_user=Depends(get_current_user)):

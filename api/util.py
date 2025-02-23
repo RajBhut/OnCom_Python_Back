@@ -19,12 +19,12 @@ COOKIE_MAX_AGE = 60 * 60 * 24 * ACCESS_TOKEN_EXPIRE_DAYS
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password using bcrypt."""
+ 
     return pwd_context.hash(password)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create a JWT token with an optional expiration."""
+
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS))
     to_encode.update({"exp": expire})
@@ -34,6 +34,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 async def get_current_user(request: Request):
     
     token = request.cookies.get("jwt")
+   
     
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -44,12 +45,11 @@ async def get_current_user(request: Request):
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        # Fetch user from Supabase
         response = supabase.table("User").select("*").eq("id", user_id).execute()
         if  not response.data:
             raise HTTPException(status_code=401, detail="User not found")
 
-        return response.data[0]  # Return user data
+        return response.data[0]  
     except JWTError as e:
         print(f"JWTError: {str(e)}")
         raise HTTPException(status_code=401, detail="Invalid token")
