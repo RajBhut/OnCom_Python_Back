@@ -36,6 +36,10 @@ class Submision(BaseModel):
 class NotesData(BaseModel):
     edge: str
     node: str
+    
+class Room(BaseModel):
+    name:str
+    title:str
 
 @router.post("/")
 async def create_question(problem: Problem, current_user=Depends(get_current_user)):
@@ -203,7 +207,44 @@ async def add_code(data: Code, current_user=Depends(get_current_user)):
         print(f"Error adding code: {e}")
         raise HTTPException(status_code=500, detail="Error adding code")
     
-    
+
+
+@router.post("/room")
+async def create_room(room:Room, current_user = Depends(get_current_user)):
+    try:
+        room = supabase.table("rooms").insert({
+            "name": room.name,
+            "title": room.title,
+            "user_id": current_user["id"]
+        }).execute()
+        if not room.data:
+            raise HTTPException(status_code=400, detail="Failed to create room")
+        return {"message": "Room created successfully", "room": room.data[0]}
+    except Exception as e:
+        print(f"Error creating room: {e}")
+        raise HTTPException(status_code=500, detail="Error creating room")
+
+@router.get("/room")
+async def get_rooms(current_user = Depends(get_current_user)):
+    try:
+        rooms = supabase.table("rooms").select("*").execute()
+        return rooms.data
+    except Exception as e:
+        print(f"Error fetching rooms: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching rooms")
+
+
+@router.delete("/room/{id}")
+async def delete_room(id:str, current_user = Depends(get_current_user)):
+    try:
+        room = supabase.table("rooms").delete().eq("name", id).execute()
+        return {"message": "Room deleted successfully"}
+    except Exception as e:
+        print(f"Error deleting room: {e}")
+        raise HTTPException(status_code=500, detail="Error deleting room")
+
+
+
 @router.delete("/delete/{id}")
 async def delete_problem(id: int):
     try:
